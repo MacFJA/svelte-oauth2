@@ -1,0 +1,78 @@
+{
+  "name": "@macfja/svelte-oauth2",
+  "description": "OAuth2 authorization for Svelte",
+  "author": "MacFJA",
+  "license": "MIT",
+  "version": "1.0.0",
+  "bugs": {
+    "url": "https://github.com/macfja/svelte-oauth2/issues"
+  },
+  "types": "types/",
+  "homepage": "https://github.com/macfja/svelte-oauth2#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/macfja/svelte-oauth2.git"
+  },
+  "exports": {
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.js"
+  },
+  "svelte": "src/index.ts",
+  "module": "dist/index.mjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "doc": "typedoc src/index.ts",
+    "prebuild": "tsc --emitDeclarationOnly",
+    "build": "rollup -c",
+    "lint": "eslint src/",
+    "pretest:svelte": "rollup -c rollup.test.config.js",
+    "pretest:sveltekit": "npm run build",
+    "test:svelte": "sirv tests/svelte",
+    "test:sveltekit": "cd tests/sk; npm run dev",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@macfja/rollup-plugin-prompt-replace": "^1.0.1",
+    "@rollup/plugin-commonjs": "^20.0.0",
+    "@rollup/plugin-node-resolve": "^9.0.0",
+    "@rollup/plugin-typescript": "^8.2.5",
+    "@sveltejs/kit": "^1.0.0-next.162",
+    "@tsconfig/svelte": "2.0.1",
+    "@types/cookie": "^0.4.1",
+    "@typescript-eslint/eslint-plugin": "^4.30.0",
+    "@typescript-eslint/parser": "^4.30.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-import": "^2.24.2",
+    "rollup": "^2.56.3",
+    "rollup-plugin-svelte": "^7.1.0",
+    "sirv-cli": "^1.0.14",
+    "svelte": "^3.42.4",
+    "tslib": "2.3.1",
+    "typedoc": "^0.21.9",
+    "typescript": "4.3.5"
+  },
+  "keywords": [
+    "svelte",
+    "sveltejs",
+    "sveltekit",
+    "svelte-kit",
+    "oauth2",
+    "auth"
+  ],
+  "files": [
+    "README.md",
+    "LICENSE.md",
+    "src",
+    "types",
+    "dist"
+  ],
+  "peerDependencies": {
+    "svelte": "^3.42.3"
+  },
+  "dependencies": {
+    "browser-cookies": "^1.2.0",
+    "cookie": "^0.4.1",
+    "js-base64": "^3.6.1",
+    "pkce": "^1.0.0-beta2"
+  }
+}
