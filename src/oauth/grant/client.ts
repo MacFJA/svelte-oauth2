@@ -1,7 +1,8 @@
 import {encode} from "js-base64"
 
 import type {ContextStrategy} from "../../integration"
-import {BaseGrant, Grant} from "../grant"
+import {BaseGrant} from "../grant"
+import type {Grant} from "../grant"
 
 export class ClientCredentials extends BaseGrant implements Grant
 {

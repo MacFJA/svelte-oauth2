@@ -1,14 +1,15 @@
-import { erase as removeCookie, get as getCookie, set as setCookie } from "browser-cookies"
+import jsCookie from "js-cookie"
 
 import type {OAuthToken} from "../../oauth"
 import type {TokenStorage} from "../tokenStorage"
+import {cookieName} from "../tokenStorage"
 
 export const browserCookie: TokenStorage = {
     remove() {
-        removeCookie("svelte-oauth-token", { samesite: "Strict" })
+        jsCookie.remove(cookieName, { samesite: "Strict" })
     },
     get(): OAuthToken | null | undefined {
-        const value = getCookie("svelte-oauth-token")
+        const value = jsCookie.get(cookieName)
         if (value === null) {
             return null
         }
@@ -19,7 +20,7 @@ export const browserCookie: TokenStorage = {
             return null
         }
     }, set(token: OAuthToken): void {
-        setCookie("svelte-oauth-token",
+        jsCookie.set(cookieName,
             JSON.stringify(token),
             { samesite: "Strict" }
         )

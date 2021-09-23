@@ -3,9 +3,11 @@ import {create} from "pkce"
 
 import type {ContextStrategy} from "../../integration"
 import {ManInTheMiddle} from "../exception/ManInTheMiddle"
-import {BaseGrant, Grant} from "../grant"
+import {BaseGrant} from "../grant"
+import type {Grant} from "../grant"
 
-export class AuthorizationCodePKCE extends BaseGrant implements Grant{
+export class AuthorizationCodePKCE extends BaseGrant implements Grant
+{
     private readonly clientId: string
     private readonly postLoginRedirectUri: string
     private readonly authorizationRedirectUri: string

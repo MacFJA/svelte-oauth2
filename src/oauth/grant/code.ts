@@ -2,9 +2,11 @@ import {encode} from "js-base64"
 
 import type {ContextStrategy} from "../../integration"
 import {ManInTheMiddle} from "../exception/ManInTheMiddle"
-import {BaseGrant, Grant} from "../grant"
+import {BaseGrant} from "../grant"
+import type {Grant} from "../grant"
 
-export class AuthorizationCode extends BaseGrant implements Grant{
+export class AuthorizationCode extends BaseGrant implements Grant
+{
     private readonly clientId: string
     private readonly clientSecret: string
     private readonly postLoginRedirectUri: string
