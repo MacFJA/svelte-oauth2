@@ -26,9 +26,9 @@
     "build": "rollup -c",
     "lint": "eslint src/",
     "pretest:svelte": "rollup -c rollup.test.config.js",
-    "pretest:sveltekit": "npm run build",
+    "pretest:sveltekit": "pnpm run build",
     "test:svelte": "sirv tests/svelte",
-    "test:sveltekit": "cd tests/sk; npm run dev",
+    "test:sveltekit": "cd tests/sk; pnpm run dev",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {

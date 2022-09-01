@@ -10,7 +10,7 @@ export default {
         { file: pkg.module, 'format': 'es' },
         { file: pkg.main, 'format': 'umd', name: 'Auth' }
     ],
-    external: ['$app/navigation', '$app/stores', '$app/env'],
+    external: ['$app/navigation', '$app/stores', '$app/environment'],
     plugins: [
         svelte(),
         typescript(),

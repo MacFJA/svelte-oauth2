@@ -1,11 +1,10 @@
-import type {ServerResponse} from "@sveltejs/kit/types/hooks"
-import { get } from "svelte/store"
-
 import {getTokenStorageType} from "./oauth"
 import type {TokenStorage} from "./oauth/tokenStorage"
 import {browserCookie} from "./oauth/tokenStorage/browserCookie"
 import {localStorage} from "./oauth/tokenStorage/localStorage"
-import {getResponseCookie, serverCookie, setRequestCookies} from "./oauth/tokenStorage/serverCookie"
+import { serverCookie } from "./oauth/tokenStorage/serverCookie"
+
+import { browser } from "$app/environment"
 
 const inMemoryStorage: Record<string, string> = {}
 
@@ -58,9 +57,8 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
 
     async redirect(url: string): Promise<void> {
         const navigation = await import("$app/navigation")
-        const env = await import("$app/env")
 
-        if (env.browser) {
+        if (browser) {
             return navigation.goto(url)
         } else {
             this.redirectedTo = url
@@ -72,8 +70,14 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
         if (this.queryObject !== null) {
             return Promise.resolve(this.queryObject)
         }
-        const stores = await import("$app/stores")
-        return get(stores.page).query
+
+        // Old version
+        // const stores = await import("$app/stores")
+        // return get(stores.page).query
+
+        // New version, except Page doesn't HAVE a query
+        // const page = getStores().page
+        // return page.query
     }
 
     getRedirection(): string|null {
@@ -99,56 +103,21 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
     }
 
     async tokenStorage(): Promise<TokenStorage> {
-        const env = await import("$app/env")
         if (getTokenStorageType() === "cookie") {
-            return env.browser ? browserCookie : serverCookie
+            return browser ? browserCookie : serverCookie
         }
         return localStorage
     }
 
-    /**
-     * Handle hooks for SSR
-     * @param {import("@sveltejs/kit/types/hooks").ServerRequest} request The server request
-     * @param {Function} resolve The request resolver
-     */
-    async handleHook({request, resolve}) {
-        const env = await import("$app/env")
-
-        if (getTokenStorageType() === "cookie" && !env.browser) {
-            setRequestCookies(request.headers["cookie"] || "")
-        }
-        /** @type {Promise<ServerResponse>} response */
-        const response = resolve(request)
-
-        return Promise.resolve(response).then((response: ServerResponse) => {
-            const cookies = getResponseCookie()
-            if (cookies !== "") {
-                let existing = response.headers["set-cookie"] || []
-                if (typeof existing === "string") existing = [existing]
-                existing.push(cookies)
-                response.headers["set-cookie"] = existing
-            }
-            const redirection = this.getRedirection()
-            if (redirection !== null && redirection !== "null") {
-                response.status = 302
-                response.headers.location = redirection
-                response.body = null
-            }
-            return response
-        })
-    }
-
     async getFromTemporary(key: string): Promise<string | null> {
-        const env = await import("$app/env")
-        if (!env.browser) {
+        if (!browser) {
             return inMemoryStorage[key] || null
         }
         return window.sessionStorage.getItem(key)
     }
 
     async saveInTemporary(key: string, data: string) {
-        const env = await import("$app/env")
-        if (!env.browser) {
+        if (!browser) {
             inMemoryStorage[key] = data
             return
         }
