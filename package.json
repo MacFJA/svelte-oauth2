@@ -3,7 +3,7 @@
   "description": "OAuth2 authorization for Svelte",
   "author": "MacFJA",
   "license": "MIT",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "bugs": {
     "url": "https://github.com/macfja/svelte-oauth2/issues"
   },
@@ -73,6 +73,7 @@
     "cookie": "^0.4.1",
     "js-base64": "^3.6.1",
     "js-cookie": "^3.0.1",
-    "pkce": "^1.0.0-beta2"
+    "pkce": "^1.0.0-beta2",
+    "vite": "^3.1.0-beta.1"
   }
 }

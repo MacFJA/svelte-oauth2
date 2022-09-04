@@ -38,7 +38,7 @@ export class AuthorizationCodePKCE extends BaseGrant implements Grant
 
     async onRequest(): Promise<boolean> {
         const params = await this.integration.query()
-        if (params.has("code") && params.has("state")) {
+        if (params?.has("code") && params?.has("state")) {
             const state = params.get("state")
             const code = params.get("code")
 

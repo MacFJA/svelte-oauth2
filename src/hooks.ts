@@ -27,7 +27,10 @@ export const handle: Handle = async ({event, resolve}) => {
             response.headers.set("set-cookie", existing)
         }
 
+        // eslint-disable @typescript-eslint/ban-ts-comment
+        // @ts-ignore: Object is possibly 'undefined'.
         const redirection = this.getRedirection()
+
         if (redirection !== null && redirection !== "null") {
             response = {
                 ...response,
