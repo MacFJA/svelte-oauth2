@@ -5,6 +5,7 @@ import type {ContextStrategy} from "../../integration"
 import {ManInTheMiddle} from "../exception/ManInTheMiddle"
 import {BaseGrant} from "../grant"
 import type {Grant} from "../grant"
+import { debug } from "svelte/internal";
 
 export class AuthorizationCodePKCE extends BaseGrant implements Grant
 {
@@ -38,6 +39,7 @@ export class AuthorizationCodePKCE extends BaseGrant implements Grant
 
     async onRequest(): Promise<boolean> {
         const params = await this.integration.query()
+        debug("AuthorizationCodePKCE", "", "", params)
         if (params?.has("code") && params?.has("state")) {
             const state = params.get("state")
             const code = params.get("code")
