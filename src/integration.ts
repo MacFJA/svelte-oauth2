@@ -122,7 +122,7 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
             setRequestCookies(event.request.headers["cookie"] || "")
         }
 
-        const response = await resolve(event)
+        const response = resolve(event)
 
         return Promise.resolve(response).then((response: Response) => {
             const cookies = getResponseCookie()
