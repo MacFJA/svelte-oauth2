@@ -111,23 +111,6 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
         return localStorage
     }
 
-    async getFromTemporary(key: string): Promise<string | null> {
-        if (!browser) {
-            return inMemoryStorage[key] || null
-        }
-        return window.sessionStorage.getItem(key)
-    }
-
-    async saveInTemporary(key: string, data: string) {
-        if (!browser) {
-            debug("integration.ts", "", "", "Saving in in-memory storage")
-            inMemoryStorage[key] = data
-            return
-        }
-        debug("integration.ts", "", "", "Saving in browser session storage")
-        return window.sessionStorage.setItem(key, data)
-    }
-
     /**
      * Handle hooks for SSR
      * @param {import("@sveltejs/kit/types/hooks").ServerRequest} request The server request
@@ -169,7 +152,22 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
         })
     }
 
+    async getFromTemporary(key: string): Promise<string | null> {
+        if (!browser) {
+            return inMemoryStorage[key] || null
+        }
+        return window.sessionStorage.getItem(key)
+    }
 
+    async saveInTemporary(key: string, data: string) {
+        if (!browser) {
+            debug("integration.ts", "", "", "Saving in in-memory storage")
+            inMemoryStorage[key] = data
+            return
+        }
+        debug("integration.ts", "", "", "Saving in browser session storage")
+        return window.sessionStorage.setItem(key, data)
+    }
 }
 
 export const browserStrategy: ContextStrategy = new class implements ContextStrategy {
