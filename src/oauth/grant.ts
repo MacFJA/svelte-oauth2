@@ -25,22 +25,26 @@ export interface Grant {
 export abstract class BaseGrant implements Grant {
     protected integration: ContextStrategy
     private tokenUri: string
+    protected headers: Headers
 
-    constructor(integration: ContextStrategy, tokenUri: string) {
+    constructor(integration: ContextStrategy, tokenUri: string, headers?: Headers) {
         this.integration = integration
         this.tokenUri = tokenUri
+        this.headers = headers || new Headers()
     }
 
     protected getToken(params: Record<string, unknown>, headers: HeadersInit = {}): Promise<boolean> {
-        const requestHeader = new Headers(headers)
-        requestHeader.set("content-type", "application/json")
+        const requestHeaders = new Headers(headers)
+        requestHeaders.set("content-type", "application/json")
 
-        return this.integration.fetch(this.tokenUri, {
+        return fetch(this.tokenUri, {
             method: "post",
             body: JSON.stringify(params),
-            headers: requestHeader
+            headers: requestHeaders
         })
-            .then((response) => response.json())
+            .then((response) => {
+                return response.json()
+            })
             .then(async (response) => {
                 if (Object.keys(response).includes("error")) {
                     (await this.integration.tokenStorage()).set(null)
@@ -49,6 +53,10 @@ export abstract class BaseGrant implements Grant {
                     (await this.integration.tokenStorage()).set(response)
                 }
                 return response
+            })
+            .catch(({reason, }) => {
+                console.log(`getToken failed: ${reason}`)
+                return Promise.resolve(false)
             })
     }
 

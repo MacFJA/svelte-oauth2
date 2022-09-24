@@ -1,11 +1,12 @@
-import type {ServerResponse} from "@sveltejs/kit/types/hooks"
-import { get } from "svelte/store"
+import { debug } from "svelte/internal"
 
-import {getTokenStorageType} from "./oauth"
-import type {TokenStorage} from "./oauth/tokenStorage"
-import {browserCookie} from "./oauth/tokenStorage/browserCookie"
-import {localStorage} from "./oauth/tokenStorage/localStorage"
-import {getResponseCookie, serverCookie, setRequestCookies} from "./oauth/tokenStorage/serverCookie"
+import { getTokenStorageType } from "./oauth"
+import type { TokenStorage } from "./oauth/tokenStorage"
+import { browserCookie } from "./oauth/tokenStorage/browserCookie"
+import { localStorage } from "./oauth/tokenStorage/localStorage"
+import { getResponseCookie, serverCookie, setRequestCookies } from "./oauth/tokenStorage/serverCookie"
+
+import { browser } from "$app/environment"
 
 const inMemoryStorage: Record<string, string> = {}
 
@@ -19,14 +20,7 @@ export interface ContextStrategy {
      * Redirect to an url
      * @param {string} url
      */
-    redirect(url: string): Promise<void>
-
-    /**
-     * Get data from an URL (Fetch API)
-     * @param {string} uri The URI of the data
-     * @param {Record<string,any>} [options] Fetch options
-     */
-    fetch(uri:string, options?:Record<string, unknown>): Promise<Response>,
+    redirect(url: string): Promise<void>,
 
     /**
      * Get the storage where token is saved
@@ -37,7 +31,7 @@ export interface ContextStrategy {
      * Get data from the temporary storage
      * @param {string} key The name/key of the data
      */
-    getFromTemporary(key: string): Promise<string|null>,
+    getFromTemporary(key: string): Promise<string | null>,
 
     /**
      * Save data in the temporary storage
@@ -50,17 +44,12 @@ export interface ContextStrategy {
 export const svelteKitStrategy: ContextStrategy = new class implements ContextStrategy {
     private fetchFunc
     private redirectedTo = null
-    private queryObject: URLSearchParams|null = null
-
-    fetch(uri: string, options?: Record<string, unknown>): Promise<Response> {
-        return this.fetchFunc(uri, options)
-    }
+    private queryObject: URLSearchParams | null = null
 
     async redirect(url: string): Promise<void> {
         const navigation = await import("$app/navigation")
-        const env = await import("$app/env")
 
-        if (env.browser) {
+        if (browser) {
             return navigation.goto(url)
         } else {
             this.redirectedTo = url
@@ -72,22 +61,20 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
         if (this.queryObject !== null) {
             return Promise.resolve(this.queryObject)
         }
-        const stores = await import("$app/stores")
-        return get(stores.page).query
+
+        // Old version
+        // const stores = await import("$app/stores")
+        // return get(stores.page).query
+
+        // New version, except the page store is a Readable and can only be subscribed
+        // const page = getStores().page
+        // return page.url.searchParams
     }
 
-    getRedirection(): string|null {
+    getRedirection(): string | null {
         const redirection = this.redirectedTo + ""
         this.redirectedTo = null
         return redirection
-    }
-
-    /**
-     * Set the fetch function to use
-     * @param {Function} func
-     */
-    setFetch(func) {
-        this.fetchFunc = func
     }
 
     /**
@@ -99,62 +86,62 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
     }
 
     async tokenStorage(): Promise<TokenStorage> {
-        const env = await import("$app/env")
         if (getTokenStorageType() === "cookie") {
-            return env.browser ? browserCookie : serverCookie
+            return browser ? browserCookie : serverCookie
         }
         return localStorage
     }
 
     /**
      * Handle hooks for SSR
-     * @param {import("@sveltejs/kit/types/hooks").ServerRequest} request The server request
-     * @param {Function} resolve The request resolver
+     * https://kit.svelte.dev/docs/types#sveltejs-kit-handle
      */
-    async handleHook({request, resolve}) {
-        const env = await import("$app/env")
-
-        if (getTokenStorageType() === "cookie" && !env.browser) {
-            setRequestCookies(request.headers["cookie"] || "")
+    async handleHook({event, resolve}) {
+        if (getTokenStorageType() === "cookie" && !browser) {
+            setRequestCookies(event.request.headers["cookie"] || "")
         }
-        /** @type {Promise<ServerResponse>} response */
-        const response = resolve(request)
 
-        return Promise.resolve(response).then((response: ServerResponse) => {
-            const cookies = getResponseCookie()
-            if (cookies !== "") {
-                let existing = response.headers["set-cookie"] || []
-                if (typeof existing === "string") existing = [existing]
-                existing.push(cookies)
-                response.headers["set-cookie"] = existing
-            }
-            const redirection = this.getRedirection()
-            if (redirection !== null && redirection !== "null") {
-                response.status = 302
-                response.headers.location = redirection
-                response.body = null
-            }
-            return response
-        })
+        const response = await resolve(event)
+
+        const cookies = getResponseCookie()
+        if (cookies !== "") {
+            let existing = response.headers["set-cookie"] || []
+            if (typeof existing === "string") existing = [existing]
+            existing.push(cookies)
+            response.headers.set("set-cookie", existing)
+        }
+
+        // eslint-disable @typescript-eslint/ban-ts-comment
+        // @ts-ignore: Object is possibly 'undefined'.
+        const redirection = this.getRedirection()
+
+        if (redirection !== null && redirection !== "null") {
+            return new Response(null, {
+                status: 302,
+                headers: {
+                    ...response.headers,
+                    location: redirection
+                }
+            })
+        }
+
+        return response
     }
 
     async getFromTemporary(key: string): Promise<string | null> {
-        const env = await import("$app/env")
-        if (!env.browser) {
+        if (!browser) {
             return inMemoryStorage[key] || null
         }
         return window.sessionStorage.getItem(key)
     }
 
     async saveInTemporary(key: string, data: string) {
-        const env = await import("$app/env")
-        if (!env.browser) {
+        if (!browser) {
             inMemoryStorage[key] = data
             return
         }
         return window.sessionStorage.setItem(key, data)
     }
-
 }
 
 export const browserStrategy: ContextStrategy = new class implements ContextStrategy {
@@ -162,12 +149,11 @@ export const browserStrategy: ContextStrategy = new class implements ContextStra
         window.location.href = url
         return Promise.resolve()
     }
+
     query(): Promise<URLSearchParams> {
         return Promise.resolve(new URL(window.location.href).searchParams)
     }
-    fetch(uri: string, options?: Record<string, unknown>): Promise<Response> {
-        return fetch(uri, options)
-    }
+
     tokenStorage(): Promise<TokenStorage> {
         if (getTokenStorageType() === "cookie") {
             return Promise.resolve(browserCookie)
