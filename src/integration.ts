@@ -20,14 +20,7 @@ export interface ContextStrategy {
      * Redirect to an url
      * @param {string} url
      */
-    redirect(url: string): Promise<void>
-
-    /**
-     * Get data from an URL (Fetch API)
-     * @param {string} uri The URI of the data
-     * @param {Record<string,any>} [options] Fetch options
-     */
-    fetch(uri: string, options?: Record<string, unknown>): Promise<Response>,
+    redirect(url: string): Promise<void>,
 
     /**
      * Get the storage where token is saved
@@ -52,10 +45,6 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
     private fetchFunc
     private redirectedTo = null
     private queryObject: URLSearchParams | null = null
-
-    fetch(uri: string, options?: Record<string, unknown>): Promise<Response> {
-        return this.fetchFunc(uri, options)
-    }
 
     async redirect(url: string): Promise<void> {
         const navigation = await import("$app/navigation")
@@ -89,14 +78,6 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
     }
 
     /**
-     * Set the fetch function to use
-     * @param {Function} func
-     */
-    setFetch(func) {
-        this.fetchFunc = func
-    }
-
-    /**
      * Set the request Query
      * @param query
      */
@@ -113,43 +94,38 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
 
     /**
      * Handle hooks for SSR
-     * @param {import("@sveltejs/kit/types/hooks").ServerRequest} request The server request
-     * @param {Function} resolve The request resolver
+     * https://kit.svelte.dev/docs/types#sveltejs-kit-handle
      */
     async handleHook({event, resolve}) {
-        debug("integration.ts", "", "", "Handle hook")
         if (getTokenStorageType() === "cookie" && !browser) {
             setRequestCookies(event.request.headers["cookie"] || "")
         }
 
-        const response = resolve(event)
+        const response = await resolve(event)
 
-        return Promise.resolve(response).then((response: Response) => {
-            const cookies = getResponseCookie()
-            debug("integration.ts", "", "", cookies)
-            if (cookies !== "") {
-                let existing = response.headers["set-cookie"] || []
-                if (typeof existing === "string") existing = [existing]
-                existing.push(cookies)
-                response.headers.set("set-cookie", existing)
-            }
+        const cookies = getResponseCookie()
+        if (cookies !== "") {
+            let existing = response.headers["set-cookie"] || []
+            if (typeof existing === "string") existing = [existing]
+            existing.push(cookies)
+            response.headers.set("set-cookie", existing)
+        }
 
-            // eslint-disable @typescript-eslint/ban-ts-comment
-            // @ts-ignore: Object is possibly 'undefined'.
-            const redirection = this.getRedirection()
+        // eslint-disable @typescript-eslint/ban-ts-comment
+        // @ts-ignore: Object is possibly 'undefined'.
+        const redirection = this.getRedirection()
 
-            if (redirection !== null && redirection !== "null") {
-                response = {
-                    ...response,
-                    status: 302,
-                    body: null
+        if (redirection !== null && redirection !== "null") {
+            return new Response(null, {
+                status: 302,
+                headers: {
+                    ...response.headers,
+                    location: redirection
                 }
+            })
+        }
 
-                response.headers.set("location", redirection)
-            }
-
-            return response
-        })
+        return response
     }
 
     async getFromTemporary(key: string): Promise<string | null> {
@@ -161,11 +137,9 @@ export const svelteKitStrategy: ContextStrategy = new class implements ContextSt
 
     async saveInTemporary(key: string, data: string) {
         if (!browser) {
-            debug("integration.ts", "", "", "Saving in in-memory storage")
             inMemoryStorage[key] = data
             return
         }
-        debug("integration.ts", "", "", "Saving in browser session storage")
         return window.sessionStorage.setItem(key, data)
     }
 }
@@ -178,10 +152,6 @@ export const browserStrategy: ContextStrategy = new class implements ContextStra
 
     query(): Promise<URLSearchParams> {
         return Promise.resolve(new URL(window.location.href).searchParams)
-    }
-
-    fetch(uri: string, options?: Record<string, unknown>): Promise<Response> {
-        return fetch(uri, options)
     }
 
     tokenStorage(): Promise<TokenStorage> {
